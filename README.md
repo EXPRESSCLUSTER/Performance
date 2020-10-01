@@ -5,4 +5,4 @@
 
 ## Mirror Disk Performance
 - Please refer to the following documentation.
-  - [Japanese](mirror/Mirror_jp.md)
+  - [Japanese](mirror/doc/Mirror_jp.md)
