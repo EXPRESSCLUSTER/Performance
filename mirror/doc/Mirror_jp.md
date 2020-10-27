@@ -26,23 +26,22 @@
       - {*} にはミラーディスクの番号が入ります。
 
 ### コマンド実行例
-- ミラーディスクコネクトのハートビート時間が 20秒 を連続して 5回 超えたら mail を送信する
+- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Max2) が 20秒 を連続して 5回 超えたら mail を送信する
   ```sh
-  # clpperfchk alert "MDC HB Time, Max2" 20 5 60 /opt/nec/clusterpro/perf/disk/nmp1.log.cur
+  # clpperfchk alert "MDC HB Time, Max2" 20 5 60 mail /opt/nec/clusterpro/perf/disk/nmp1.log.cur
   ```
 
 ### クラスタの構成
 - CLUSTERPRO でミラーディスク型のクラスタを構築し、カスタムモニタリソースから clpperfchk コマンドを実行します。
+- clpperfchk 内でしきい値を超えた場合、clplogcmd コマンドを用いて mail 送信などを行います。
   ```
-  +--------------------------------------------------+
-  | CLUSTERPRO                                       |
-  |  |                                               |
-  |  +-- カスタムモニタリソース (非同期モードで実行) |
-  |       |                                          |
-  |       +-- clpperfchk                             |
-  |            | (しきい値を指定回数超えた場合)      |
-  |            +-- clplogcmd                         |
-  +--------------------------------------------------+
+   CLUSTERPRO
+    |
+    +-- genw (Async mode)
+         |
+         +-- clpperfchk
+              | 
+              +-- clplogcmd
   ```
 
 ## ソースコード案 (いずれ削除予定)
@@ -114,7 +113,7 @@ sendalert
         char tmp[ROW_LEN];
         int column;
 
-    (省略)
+    /* snip */
 
         /* find the column */
         fp = fopen(path, "r");
@@ -137,7 +136,7 @@ sendalert
         /* Find the last row */
         while (1)
         {
-            /* Find the last row */
+            /* find the column on the last row */
             sleep(interval);
         }
     return 0;
