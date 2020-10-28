@@ -28,7 +28,7 @@
 ### コマンド実行例
 - ミラーディスクコネクトのハートビート時間 (MDC HB Time, Max2) が 20秒 を連続して 5回 超えたら mail を送信する
   ```sh
-  # clpperfchk alert "MDC HB Time, Max2" 20 5 60 mail /opt/nec/clusterpro/perf/disk/nmp1.log.cur
+  # clpperfchk alert "MDC HB Time, Max2" 20 5 60 mail /opt/nec/clusterpro/perf/disk/nmp1.cur
   ```
 
 ### クラスタの構成
