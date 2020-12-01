@@ -20,6 +20,13 @@ int main (
 	FILE *fp = NULL;
 	int i;
 
+	/* initialize variables */
+	/*
+	 * Expamle:
+	 * times = 0;
+	 * threshold = 0;
+	 */
+//    printf("%d",argc);
 	if (!strcmp (argv[1], "alert"))	{
 		/* TODO: NULL check */
         if ((argc != 8)) {
@@ -63,8 +70,18 @@ sendalert
     char *command = "clplogcmd -m ";
     char str[30];
     char *row_time = NULL;
+    char *row_time
+//    int ret = system(str);
+//    char *strmethod = --method;
+//    char buf[BUFSIZE];
+//    int BUFSIZE;
+//    int ret;
 
+//    strcat(command,label);
+//    printf("%s\n",command);
     sprintf(str,"%s \"%s\" --%s\n",command,label,method);
+//    printf("%s\n",str);
+//    printf("%d",argc);
 	printf("label    : %s \n", label);
 	printf("threshold: %d \n", threshold);
 	printf("times    : %d \n", times);
@@ -81,7 +98,7 @@ sendalert
 	    if (!strcmp(token, label)) {
 		/* Bingo! */
             column = i;
-//            printf("column: %d\n", column);
+            printf("column: %d\n", column);
             break;
 	    }
 	    token = strtok(NULL, "\"");
@@ -92,7 +109,8 @@ sendalert
 	while (1) {
         
         
-//        printf("a \n");
+        printf("a \n");
+        //  printf("row_time %s\n",row_time);
         /* find the last row*/
         fp = fopen(path, "r");
         number_line = 0;
@@ -100,39 +118,51 @@ sendalert
             number_line++;
         }
         fseek(fp, 0L, SEEK_SET);
+//        printf("row_time %s\n",row_time);
         for (i = 0; i < number_line - 1; i++) {
             fgets(tmp, sizeof(tmp), fp);
         }
-//        printf("%s\n",tmp);
-
+        printf("%s\n",tmp);
+//        printf("row_time %s\n",row_time);
+        /* find jyuuhuku*/
+        /*        token = strtok(tmp, "\",");
+        for (i = 0; i <= column; i++) {
+            if (i == 0) {
+                time = atoi(token);
+                printf("time %d\n",time);
+               
+            }
+            else {
+                break;
+            }
+        
+        */
         /* find the 1rowtime*/
         token = strtok(tmp, "\",");
+        printf("row_time %s\n",row_time);
         if (row_time == NULL) {
-//            printf("%s\n",token);
-            row_time = (char*)malloc(sizeof(char) * sizeof(token));
-            strcpy(row_time, token);
-//            printf("rowtime %s\n",row_time);
+            printf("%s\n",token);
+            strcpy(rowtime, token);
+//            row_time = token;
+            printf("rowtime %s\n",row_time);
         }
         else {
-//            printf("%s\n",token);
-            printf("Current time %s\n",row_time);
+            printf("%s\n",token);
+            printf("row_time %s\n",row_time);
             if (!strcmp(token, row_time)) {
                 printf("error\n");
-                row_time = (char*)malloc(sizeof(char) * sizeof(token));
-                strcpy(row_time, token);
                 break;
             }
             else {
-//                printf("NO REPEAT\n");
-                row_time = (char*)malloc(sizeof(char) * sizeof(token));
-                strcpy(row_time, token);
+                printf("NO REPEAT\n");
+                //  token = row_time;
             }
         }
         /* find the value*/
         for (i = 0; i <= column; i++) {    
             if (column == i) {
                 value = atoi(token);
-//                printf("target %d\n",value);
+                printf("target %d\n",value);
                 break;
             }
             else {
@@ -144,45 +174,51 @@ sendalert
                
 	    /*find times*/
         token = strtok(tmp, "\",");
+	    /*printf("test %d\n",threshold);*/
         if (threshold <= value) {
-//            printf("OK \n");
+            printf("OK \n");
             counts++;
         }
         else {
             /*printf("Nothing \n");*/
             counts=0;
         }
-//        printf("%d\n",counts);
+        printf("%d\n",counts);
 
         /* threhold = value*/
         if (times == counts) {
-            printf("This %s has crossed the threshold %d times \n ",label ,times );
             sprintf(str,"%s \"%s\" --%s\n",command,label,method);
-            int res = system(str);
-            //3,4
-            if(WIFEXITED(res) == 1) {
-                //  printf("%d\n",WEXITSTATUS(res));
-                if (WEXITSTATUS(res) == 0) {
-                    //  printf("success\n");
-                    counts = 0;
-                }
-                else {
-                    printf("command not found");
-                    exit(1);
-                }
+//            printf("%s\n",str);
+            printf("label: %s\n",label);
+            
+/*            int ret = system(str);
+            if (ret == 0) {
+                system(str);
             }
-            //1,2
             else {
-                printf("NOT child process");
+                printf("error\n");
+                exit(1);
+                }*/
+            switch (system(str)) {
+            
+            case 0:
+//                system(str);
+                break;
+            case -1:
+                printf("child process or \n");
+                exit(1);
+            default:
+                printf("error\n");
                 exit(1);
             }
-            //  printf("check\n");
-            sleep(interval);
+            /*           snprintf(buf, BUFSIZE, "clplogcmd -m test --%s", method);
+                         system(buf);*/
+            break;
         }
         else {
             sleep(interval);
+//            printf("row_time %s\n",row_time);
         }
     }
 	return 0;
 }
-

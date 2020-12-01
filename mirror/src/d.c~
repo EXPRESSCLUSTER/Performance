@@ -103,7 +103,7 @@ sendalert
         for (i = 0; i < number_line - 1; i++) {
             fgets(tmp, sizeof(tmp), fp);
         }
-//        printf("%s\n",tmp);
+        printf("%s\n",tmp);
 
         /* find the 1rowtime*/
         token = strtok(tmp, "\",");
