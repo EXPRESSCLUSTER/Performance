@@ -126,19 +126,19 @@ sendalert
             previous_time = (char*)malloc(sizeof(char) * sizeof(token));
             strcpy(previous_time, token);
             free(previous_time);
-//         
+         
         }
         else {
             printf("%s\n",token);
             printf("Current time %s\n",previous_time);
             if (!strcmp(token, previous_time)) {
                 printf("%d: error\n",__LINE__);
-//                row_time = (char*)malloc(sizeof(char) * sizeof(token));
-//                strcpy(row_time, token);
+
+
                 break;
             }
             else {
-//                printf("NO REPEAT\n");
+
                 previous_time = (char*)malloc(sizeof(char) * sizeof(token));
                 strcpy(previous_time, token);
                 free(previous_time);
@@ -148,8 +148,8 @@ sendalert
         for (i = 0; i <= column; i++) {    
             if (column == i) {
                 value = atoi(token);
-//                printf("target %d\n",value);
-//                break;
+
+
             }
             else {
                 token = strtok(NULL, "\",");
@@ -161,14 +161,14 @@ sendalert
         /*find times*/
         token = strtok(tmp, "\",");
         if (threshold <= value) {
-//            printf("OK \n");
+
             counts++;
         }
         else {
-            /*printf("Nothing \n");*/
+
             counts=0;
         }
-//        printf("%d\n",counts);
+
 
         /* threhold = value*/
         if (times == counts) {
@@ -177,11 +177,11 @@ sendalert
             int res = system(str);
             
             if(WIFEXITED(res)) {
-                //  printf("%d\n",WEXITSTATUS(res));
+
                 if (WEXITSTATUS(res) == 0) {
-                    //  printf("success\n");
-                    //  counts = 0;
-                    printf("command succes");
+ 
+ 
+                    printf("command succes\n");
                 }
                 else {
                     printf("%d: command failid",__LINE__);
@@ -193,7 +193,7 @@ sendalert
                 printf("%d: NOT child process",__LINE__);
                 return ERR_INVALID_PARAM;
             }
-            //  printf("check\n");
+ 
             sleep(interval);
         }
         else {
