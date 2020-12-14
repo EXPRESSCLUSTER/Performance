@@ -12,38 +12,51 @@ int main (
 {
     /* define variables */
     char label[LABEL_LEN];
-    char method[LABEL_LEN];
+    char method[LABEL_LEN];   
     char path[PATH_LEN];
-    int times;
-    int interval;
-    float threshold;
+    int times = 0;
+    int interval = 0;
+    float threshold = 0;
     FILE *fp = NULL;
-    int i;
-    int ret;
+    int i = 0;
+    int ret = 0;
 
-    if ((argc == NUMBER_OF_ARGUMENTS)){
-        if (!strcmp (argv[1], "alert")) {    
+    memset(label,0,sizeof(label));
+    memset(method,0,sizeof(method));
+    memset(path,0,sizeof(path));
+
+    if((argc == NUMBER_OF_ARGUMENTS)){
+        if(!strcmp (argv[1], "alert")) {    
             strncpy(label, argv[2],LABEL_LEN);
             threshold = atof(argv[3]);
             times = atoi(argv[4]);
             interval = atoi(argv[5]);
             strncpy(method, argv[6],LABEL_LEN);
             strncpy(path, argv[7],PATH_LEN);
-            // if (||)
-            sendalert(label, threshold, times, interval, method, path);
+           
+            if(threshold == 0 || times == 0 || interval == 0 ) {
+                printf("%d: Invalid parameter. threshold=%f. times=%d. interval=%d\n", __LINE__,threshold,times,interval);                
+                return ERR_INVALID_PARAM;
+            }
+
+            if(strcmp(method,"syslog") && strcmp(method,"alert") && strcmp(method,"mail") && strcmp(method,"trap")) {
+                printf("%d: Invalid parameter. method:%s\n", __LINE__,method);
+                return ERR_INVALID_PARAM;
+            }
+
             ret = sendalert(label, threshold, times, interval, method, path);
-            if (!ret) {
-                printf("sendalert failed (ret: %d).\n", ret);
+            if(!ret) {
+                printf("%d: sendalert failed (ret: %d).\n", __LINE__, ret);
                 return ERR_INVALID_PARAM;
             }
         }
-        else {
-            printf("%d: error\n",__LINE__);
+        else{
+            printf("%d: Invalid parameter.Not Alert.%s\n", __LINE__,argv[1]);
             return ERR_INVALID_PARAM;
         }
     }
     else {
-        printf ("%d: Invalid parameter.\n", __LINE__);
+        printf("%d: Invalid parameter.Number of arguments=%d\n", __LINE__,NUMBER_OF_ARGUMENTS);
         return ERR_INVALID_PARAM;
     }
 
@@ -55,22 +68,26 @@ int
 sendalert
 (
     char *label,
-    int threshold, int times, int interval, char *method, char *path)
+    float threshold, int times, int interval, char *method, char *path)
 {
     char *token = NULL;
     char tmp[ROW_LEN];
-    int column;
+    int column = 0;
     FILE *fp = NULL;
     int i = 0;
-    int number_line;
-    char *date;
-    int value;
+    int number_line=0;
+    float value=0;
     int counts = 0;
     char *command = "clplogcmd -m ";
     char str[STR_LEN];
-    char *previous_time = NULL;
+    char pre_time[TIME_LEN];
+    char *cmd_line = NULL;
+    int ret=0;
+    
+    memset(tmp, 0, sizeof(tmp));
+    memset(str, 0, sizeof(str));
+    memset(pre_time, 0, sizeof(pre_time));
 
-    sprintf(str,"%s \"%s\" --%s\n",command,label,method);
     printf("label    : %s \n", label);
     printf("threshold: %d \n", threshold);
     printf("times    : %d \n", times);
@@ -81,124 +98,105 @@ sendalert
     /* find the column */
     fp = fopen(path, "r");
     if(fp == NULL) {
-        printf ("%d: File not found.\n", __LINE__);
+        printf("%d: File not found.path=%s\n", __LINE__,path);
         return ERR_INVALID_PARAM;
     }
     else {
         fgets(tmp, sizeof(tmp), fp);
         token = strtok(tmp, "\",");
-        while (token != NULL) {
-            if (!strcmp(token, label)) {
+        if(token == NULL) {
+            printf("%d: \n", __LINE__);
+            return ERR_BLANK_LINE;
+        }
+        while(token != NULL) {
+            if(!strcmp(token, label)) {
                 /* Bingo! */
                 column = i;
+                break;
             }
-            else {
-            token = strtok(NULL, "\"");
-            i++;
+            else{
+                token = strtok(NULL, "\"");
+                i++;
             }
         }
     }
     fclose(fp);  
-
-    while (1) {        
-//        printf("a \n");
-        /* find the last row*/
+   
+    while (1) {
         fp = fopen(path, "r");
         if(fp == NULL) {
-            printf ("%d: File not found.\n", __LINE__);
+            printf("%d: File not found. path=%s \n", __LINE__,path);
             return ERR_INVALID_PARAM;
         }
-        else {
+        else{
             number_line = 0;
-            while (fgets(tmp, sizeof(tmp), fp) != NULL) {
+            while(fgets(tmp, sizeof(tmp), fp) != NULL) {
                 number_line++;
             }
             fseek(fp, 0L, SEEK_SET);
-            for (i = 0; i < number_line - 1; i++) {
+            for(i = 0; i < number_line - 1; i++) {
                 fgets(tmp, sizeof(tmp), fp);
             }
             printf("%s\n",tmp);
         }
-        /* find the 1rowtime*/
+        /* compare cur_time to pre_time */
         token = strtok(tmp, "\",");
-        if (previous_time == NULL) {
-            printf("%s\n",token);
-            previous_time = (char*)malloc(sizeof(char) * sizeof(token));
-            strcpy(previous_time, token);
-            free(previous_time);
-         
+        printf("%d: Current time %s\n", __LINE__, token);
+        if(strlen(pre_time) == 0) {
+            strncpy(pre_time, token, TIME_LEN);
         }
-        else {
-            printf("%s\n",token);
-            printf("Current time %s\n",previous_time);
-            if (!strcmp(token, previous_time)) {
-                printf("%d: error\n",__LINE__);
+        else{
+            if(!strcmp(token, pre_time)) {
+                printf("Reading the same line\n");
+                continue;
+            }
+            else{
+                strncpy(pre_time, token, TIME_LEN);
+            }
+        }
 
-
+        /* find the value */
+        for(i = 0; i <= column; i++) {    
+            if(column == i) {
+                value = atof(token);
                 break;
             }
-            else {
-
-                previous_time = (char*)malloc(sizeof(char) * sizeof(token));
-                strcpy(previous_time, token);
-                free(previous_time);
-            }
-        }
-        /* find the value*/
-        for (i = 0; i <= column; i++) {    
-            if (column == i) {
-                value = atoi(token);
-
-
-            }
-            else {
+            else{
                 token = strtok(NULL, "\",");
             }
         }
         fclose(fp); 
-
-               
-        /*find times*/
-        token = strtok(tmp, "\",");
-        if (threshold <= value) {
-
+ 
+        /* find times */
+        if(threshold <= value) {
             counts++;
         }
-        else {
-
-            counts=0;
+        else{
+            counts = 0;
         }
 
+        /* threhold = value */
+        if(times == counts) {
+            sprintf(str,"This %s has crossed the threshold %d times \n", label, times);
+            printf("%s\n",str);
+            sprintf(cmd_line,"%s \"%s\"  --%s\n", command, str, method);           
+            ret = system(cmd_line);
 
-        /* threhold = value*/
-        if (times == counts) {
-            printf("This %s has crossed the threshold %d times \n ",label ,times );
-            sprintf(str,"%s \" Thid %s has crossed the threshold %d times \" --%s\n",command,label,times,method);
-            int res = system(str);
-            
-            if(WIFEXITED(res)) {
-
-                if (WEXITSTATUS(res) == 0) {
- 
- 
-                    printf("command succes\n");
+            if(WIFEXITED(ret)) {
+                if(WEXITSTATUS(ret) == 0) {
+                    printf("%d: command success \n", __LINE__);
                 }
-                else {
-                    printf("%d: command failid",__LINE__);
-                    return ERR_INVALID_PARAM;
+                else{
+                    printf("%d: command failid\n",__LINE__);
+                    return ERR_COMMAND_FAILID;
                 }
             }
-            
-            else {
-                printf("%d: NOT child process",__LINE__);
+            else{
+                printf("%d: system() failed\n",__LINE__);
                 return ERR_INVALID_PARAM;
             }
- 
-            sleep(interval);
         }
-        else {
-            sleep(interval);
-        }
-        return NORMAL_END;
-    }     
+        sleep(interval);
+    }
+    return NORMAL_END;
 }
