@@ -21,12 +21,14 @@ int main (
     int i = 0;
     int ret = 0;
 
+    /*Initialize*/
     memset(label,0,sizeof(label));
     memset(method,0,sizeof(method));
     memset(path,0,sizeof(path));
 
+    /*Check arguments*/
     if((argc == NUMBER_OF_ARGUMENTS)){
-        if(!strcmp (argv[1], "alert")) {    
+        if(!strcmp (argv[1], "alert")){
             strncpy(label, argv[2],LABEL_LEN);
             threshold = atof(argv[3]);
             times = atoi(argv[4]);
@@ -34,33 +36,30 @@ int main (
             strncpy(method, argv[6],LABEL_LEN);
             strncpy(path, argv[7],PATH_LEN);
            
-            if(threshold == 0 || times == 0 || interval == 0 ) {
-                printf("%d: Invalid parameter. threshold=%f. times=%d. interval=%d\n", __LINE__,threshold,times,interval);                
+            if(threshold <= 0 || times <= 0 || interval <= 0 ) {
+                printf("%d: Invalid parameter. (threshold:%f, times* %d, interval: %d\n", __LINE__,threshold,times,interval);                
                 return ERR_INVALID_PARAM;
             }
-
             if(strcmp(method,"syslog") && strcmp(method,"alert") && strcmp(method,"mail") && strcmp(method,"trap")) {
-                printf("%d: Invalid parameter. method:%s\n", __LINE__,method);
+                printf("%d: Invalid parameter. (method:%s)\n", __LINE__, method);
                 return ERR_INVALID_PARAM;
             }
-
             ret = sendalert(label, threshold, times, interval, method, path);
             if(!ret) {
-                printf("%d: sendalert failed (ret: %d).\n", __LINE__, ret);
-                return ERR_INVALID_PARAM;
+                printf("%d: sendalert failed (ret:%d).\n", __LINE__, ret);
+                return ret;
             }
         }
         else{
-            printf("%d: Invalid parameter.Not Alert.%s\n", __LINE__,argv[1]);
+            printf("%d: 1st arguments (%s).\n", __LINE__, argv[1]);
             return ERR_INVALID_PARAM;
         }
     }
     else {
-        printf("%d: Invalid parameter.Number of arguments=%d\n", __LINE__,NUMBER_OF_ARGUMENTS);
+        printf("%d: Not enough arguments (%d)\n", __LINE__, argc);
         return ERR_INVALID_PARAM;
     }
-
-    return NORMAL_END;
+    return SUCCESS;
 }
 
 
@@ -84,12 +83,14 @@ sendalert
     char *cmd_line = NULL;
     int ret=0;
     
+    /*Initialize*/
     memset(tmp, 0, sizeof(tmp));
     memset(str, 0, sizeof(str));
     memset(pre_time, 0, sizeof(pre_time));
 
+    /*Output arguments*/
     printf("label    : %s \n", label);
-    printf("threshold: %d \n", threshold);
+    printf("threshold: %f \n", threshold);
     printf("times    : %d \n", times);
     printf("interval : %d \n", interval);
     printf("method   : %s \n", method);
@@ -98,19 +99,19 @@ sendalert
     /* find the column */
     fp = fopen(path, "r");
     if(fp == NULL) {
-        printf("%d: File not found.path=%s\n", __LINE__,path);
+        printf("%d: File not found.(%s)\n", __LINE__, path);
         return ERR_INVALID_PARAM;
     }
     else {
         fgets(tmp, sizeof(tmp), fp);
         token = strtok(tmp, "\",");
         if(token == NULL) {
-            printf("%d: \n", __LINE__);
-            return ERR_BLANK_LINE;
+            printf("%d:Wrong format.\n", __LINE__);
+            return ERR_NOT_FOUND;
+            fclose(fp);
         }
         while(token != NULL) {
             if(!strcmp(token, label)) {
-                /* Bingo! */
                 column = i;
                 break;
             }
@@ -122,10 +123,11 @@ sendalert
     }
     fclose(fp);  
    
+    /*infinite loop*/
     while (1) {
         fp = fopen(path, "r");
         if(fp == NULL) {
-            printf("%d: File not found. path=%s \n", __LINE__,path);
+            printf("%d: File not found.(%s)\n", __LINE__,path);
             return ERR_INVALID_PARAM;
         }
         else{
@@ -141,13 +143,12 @@ sendalert
         }
         /* compare cur_time to pre_time */
         token = strtok(tmp, "\",");
-        printf("%d: Current time %s\n", __LINE__, token);
         if(strlen(pre_time) == 0) {
             strncpy(pre_time, token, TIME_LEN);
         }
         else{
             if(!strcmp(token, pre_time)) {
-                printf("Reading the same line\n");
+                printf("Find  the same line.\n", __LINE__);
                 continue;
             }
             else{
@@ -156,7 +157,7 @@ sendalert
         }
 
         /* find the value */
-        for(i = 0; i <= column; i++) {    
+        for(i = 0; i <= column; i++) {
             if(column == i) {
                 value = atof(token);
                 break;
@@ -175,19 +176,20 @@ sendalert
             counts = 0;
         }
 
-        /* threhold = value */
+        /* Over threshold */
         if(times == counts) {
-            sprintf(str,"This %s has crossed the threshold %d times \n", label, times);
+            sprintf(str,"Over threshold (label:%s, threshold:%g, times:%d).\n", label, threshold,  times);
             printf("%s\n",str);
             sprintf(cmd_line,"%s \"%s\"  --%s\n", command, str, method);           
             ret = system(cmd_line);
 
+            /* Error handling of system() */
             if(WIFEXITED(ret)) {
                 if(WEXITSTATUS(ret) == 0) {
                     printf("%d: command success \n", __LINE__);
                 }
                 else{
-                    printf("%d: command failid\n",__LINE__);
+                    printf("%d: command failed (%d)\n",__LINE__, ret);
                     return ERR_COMMAND_FAILID;
                 }
             }
@@ -198,5 +200,5 @@ sendalert
         }
         sleep(interval);
     }
-    return NORMAL_END;
+    return SUCCESS;
 }
