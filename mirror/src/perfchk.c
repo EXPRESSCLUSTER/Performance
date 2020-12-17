@@ -37,7 +37,7 @@ int main (
             strncpy(path, argv[7],PATH_LEN);
            
             if(threshold <= 0 || times <= 0 || interval <= 0 ) {
-                printf("%d: Invalid parameter. (threshold:%f, times* %d, interval: %d\n", __LINE__,threshold,times,interval);                
+                printf("%d: Invalid parameter. (threshold:%f, times:%d, interval:%d)\n", __LINE__,threshold,times,interval);                
                 return ERR_INVALID_PARAM;
             }
             if(strcmp(method,"syslog") && strcmp(method,"alert") && strcmp(method,"mail") && strcmp(method,"trap")) {
@@ -106,7 +106,7 @@ sendalert
         fgets(tmp, sizeof(tmp), fp);
         token = strtok(tmp, "\",");
         if(token == NULL) {
-            printf("%d:Wrong format.\n", __LINE__);
+            printf("%d: Wrong format.\n", __LINE__);
             return ERR_NOT_FOUND;
             fclose(fp);
         }
@@ -127,7 +127,7 @@ sendalert
     while (1) {
         fp = fopen(path, "r");
         if(fp == NULL) {
-            printf("%d: File not found.(%s)\n", __LINE__,path);
+            printf("%d: File not found.(%s)\n", __LINE__, path);
             return ERR_INVALID_PARAM;
         }
         else{
@@ -190,12 +190,12 @@ sendalert
                 }
                 else{
                     printf("%d: command failed (%d)\n",__LINE__, ret);
-                    return ERR_COMMAND_FAILID;
+                    return ERR_COMMAND_FAILED;
                 }
             }
             else{
-                printf("%d: system() failed\n",__LINE__);
-                return ERR_INVALID_PARAM;
+                printf("%d: system() failed (%d)\n",__LINE__, WIFEXITED(ret));
+                return ERR_INTERNAL;
             }
         }
         sleep(interval);
