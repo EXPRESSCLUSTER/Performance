@@ -28,7 +28,7 @@ int main (
 
     /*Check arguments*/
     if((argc == NUMBER_OF_ARGUMENTS)){
-        if(!strcmp (argv[1], "alert")){
+        if(!strcmp(argv[1], "alert")){
             strncpy(label, argv[2],LABEL_LEN);
             threshold = atof(argv[3]);
             times = atoi(argv[4]);
@@ -37,11 +37,11 @@ int main (
             strncpy(path, argv[7],PATH_LEN);
            
             if(threshold <= 0 || times <= 0 || interval <= 0 ) {
-                printf("%d: Invalid parameter. (threshold:%f, times:%d, interval:%d)\n", __LINE__,threshold,times,interval);                
+                printf("%d: Invalid parameter (threshold:%f, times:%d, interval:%d).\n", __LINE__,threshold,times,interval);                
                 return ERR_INVALID_PARAM;
             }
             if(strcmp(method,"syslog") && strcmp(method,"alert") && strcmp(method,"mail") && strcmp(method,"trap")) {
-                printf("%d: Invalid parameter. (method:%s)\n", __LINE__, method);
+                printf("%d: Invalid parameter (method:%s).\n", __LINE__, method);
                 return ERR_INVALID_PARAM;
             }
             ret = sendalert(label, threshold, times, interval, method, path);
@@ -56,7 +56,7 @@ int main (
         }
     }
     else {
-        printf("%d: Not enough arguments (%d)\n", __LINE__, argc);
+        printf("%d: Not enough arguments (%d).\n", __LINE__, argc);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -80,13 +80,14 @@ sendalert
     char *command = "clplogcmd -m ";
     char str[STR_LEN];
     char pre_time[TIME_LEN];
-    char *cmd_line = NULL;
+    char cmd_line[CMD_LEN];
     int ret=0;
     
     /*Initialize*/
     memset(tmp, 0, sizeof(tmp));
     memset(str, 0, sizeof(str));
     memset(pre_time, 0, sizeof(pre_time));
+    memset(cmd_line, 0, sizeof(cmd_line));
 
     /*Output arguments*/
     printf("label    : %s \n", label);
@@ -99,7 +100,7 @@ sendalert
     /* find the column */
     fp = fopen(path, "r");
     if(fp == NULL) {
-        printf("%d: File not found.(%s)\n", __LINE__, path);
+        printf("%d: File not found (%s).\n", __LINE__, path);
         return ERR_INVALID_PARAM;
     }
     else {
@@ -107,8 +108,8 @@ sendalert
         token = strtok(tmp, "\",");
         if(token == NULL) {
             printf("%d: Wrong format.\n", __LINE__);
-            return ERR_NOT_FOUND;
             fclose(fp);
+            return ERR_NOT_FOUND;
         }
         while(token != NULL) {
             if(!strcmp(token, label)) {
@@ -127,13 +128,18 @@ sendalert
     while (1) {
         fp = fopen(path, "r");
         if(fp == NULL) {
-            printf("%d: File not found.(%s)\n", __LINE__, path);
+            printf("%d: File not found (%s).\n", __LINE__, path);
             return ERR_INVALID_PARAM;
         }
         else{
             number_line = 0;
             while(fgets(tmp, sizeof(tmp), fp) != NULL) {
                 number_line++;
+            }
+            if(number_line <= 1) {
+                printf("%d: Wrong format (%d).\n", __LINE__, number_line);
+                fclose(fp);
+                goto loop;
             }
             fseek(fp, 0L, SEEK_SET);
             for(i = 0; i < number_line - 1; i++) {
@@ -148,8 +154,9 @@ sendalert
         }
         else{
             if(!strcmp(token, pre_time)) {
-                printf("Find  the same line.\n", __LINE__);
-                continue;
+                printf("Find the same line.\n", __LINE__);
+                fclose(fp);
+                goto loop;
             }
             else{
                 strncpy(pre_time, token, TIME_LEN);
@@ -178,26 +185,28 @@ sendalert
 
         /* Over threshold */
         if(times == counts) {
-            sprintf(str,"Over threshold (label:%s, threshold:%g, times:%d).\n", label, threshold,  times);
-            printf("%s\n",str);
-            sprintf(cmd_line,"%s \"%s\"  --%s\n", command, str, method);           
+            sprintf(str,"Over threshold (label:%s, threshold:%f, times:%d).\n", label, threshold,  times);
+            sprintf(cmd_line,"%s \"%s\"  --%s\n", command, str, method);
             ret = system(cmd_line);
 
             /* Error handling of system() */
             if(WIFEXITED(ret)) {
                 if(WEXITSTATUS(ret) == 0) {
-                    printf("%d: command success \n", __LINE__);
+                    printf("%d: command success. \n", __LINE__);
                 }
                 else{
-                    printf("%d: command failed (%d)\n",__LINE__, ret);
+                    printf("%d: command failed (%d).\n",__LINE__, ret);
+                    fclose(fp);
                     return ERR_COMMAND_FAILED;
                 }
             }
             else{
-                printf("%d: system() failed (%d)\n",__LINE__, WIFEXITED(ret));
+                printf("%d: system() failed (%d).\n",__LINE__, WIFEXITED(ret));
+                fclose(fp);
                 return ERR_INTERNAL;
             }
         }
+loop:
         sleep(interval);
     }
     return SUCCESS;
