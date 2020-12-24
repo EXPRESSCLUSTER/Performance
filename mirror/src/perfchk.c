@@ -1,16 +1,15 @@
-// main.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "perfchk.h"
 #include <unistd.h>
+#include "perfchk.h"
 
 int main (
     int argc, 
     char **argv
     )
 {
-    /* define variables */
+    /* Define variables */
     char label[LABEL_LEN];
     char method[METHOD_LEN];   
     char path[PATH_LEN];
@@ -36,6 +35,7 @@ int main (
             strncpy(method, argv[6], METHOD_LEN);
             strncpy(path, argv[7], PATH_LEN);
            
+            /* Check arguments */
             if(threshold <= 0 || times <= 0 || interval <= 0) {
                 printf("%d: Invalid parameter (threshold:%f, times:%d, interval:%d).\n", __LINE__, threshold, times, interval);                
                 return ERR_INVALID_PARAM;
@@ -44,19 +44,21 @@ int main (
                 printf("%d: Invalid parameter (method:%s).\n", __LINE__, method);
                 return ERR_INVALID_PARAM;
             }
+            
+            /* Send alert */
             ret = sendalert(label, threshold, times, interval, method, path);
             if(!ret) {
-                printf("%d: sendalert failed (ret:%d).\n", __LINE__, ret);
+                printf("%d: sendalert() failed (ret:%d).\n", __LINE__, ret);
                 return ret;
             }
         }
         else{
-            printf("%d: 1st arguments (%s).\n", __LINE__, argv[1]);
+            printf("%d: 1st argument is invalid (%s).\n", __LINE__, argv[1]);
             return ERR_INVALID_PARAM;
         }
     }
     else {
-        printf("%d: Not enough arguments (%d).\n", __LINE__, argc);
+        printf("%d: The number of arguments is invalid (%d).\n", __LINE__, argc);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -109,11 +111,7 @@ int sendalert (
     else {
         fgets(tmp, sizeof(tmp), fp);
         fclose(fp);
-        token = strtok(tmp, "\",");
-        if(token == NULL) {
-            printf("%d: Wrong format.\n", __LINE__);
-            return ERR_INVALID_FORMAT;
-        }
+        token = strtok(tmp, "\"");
         while(token != NULL) {
             if(!strcmp(token, label)) {
                 column = i;
@@ -124,9 +122,14 @@ int sendalert (
                 i++;
             }
         }
+        if(token == NULL) {
+            printf("%d: Invalid format.\n", __LINE__);
+            return ERR_INVALID_FORMAT;
+        }
     }
    
     while (1) {
+        /* Find the line number & get the last line */
         fp = fopen(path, "r");
         if(fp == NULL) {
             printf("%d: File not found (%s).\n", __LINE__, path);
@@ -138,7 +141,7 @@ int sendalert (
                 line_number++;
             }
             if(line_number <= 1) {
-                printf("%d: Wrong format (%d).\n", __LINE__, line_number);
+                printf("%d: Invalid format (%d).\n", __LINE__, line_number);
                 fclose(fp);
                 goto loop;
             }
@@ -150,8 +153,8 @@ int sendalert (
         }
         fclose(fp);
         
-        /* compare cur_time to pre_time */
-        token = strtok(tmp, "\",");
+        /* Compare cur_time to pre_time */
+        token = strtok(tmp, "\"");
         if(strlen(pre_time) == 0) {
             strncpy(pre_time, token, TIME_LEN);
         }
@@ -165,18 +168,18 @@ int sendalert (
             }
         }
 
-        /* find the value */
+        /* Find the value */
         for(i = 0; i <= column; i++) {
             if(column == i) {
                 value = atof(token);
                 break;
             }
             else{
-                token = strtok(NULL, "\",");
+                token = strtok(NULL, "\"");
             }
         }
  
-        /* find times */
+        /* Check value */
         if(threshold <= value) {
             counts++;
         }
@@ -190,7 +193,7 @@ int sendalert (
             sprintf(cmd_line,"%s \"%s\" --%s > /dev/null 2>&1", command, str, method);
             ret = system(cmd_line);
 
-            /* Error handling of system() */
+            /* Run command */
             if(WIFEXITED(ret)) {
                 if(WEXITSTATUS(ret) == 0) {
                     printf("%d: Command success. \n", __LINE__);

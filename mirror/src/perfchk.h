@@ -17,10 +17,10 @@
 
 
 #define SUCCESS 0
-#define ERR_INTERNAL 1
-#define ERR_INVALID_PARAM 2
-#define ERR_INVALID_FORMAT 3
-#define ERR_OPEN_FILE 4
-#define ERR_COMMAND_FAILED 5
+#define ERR_INTERNAL 1001
+#define ERR_INVALID_PARAM 1002
+#define ERR_INVALID_FORMAT 1003
+#define ERR_OPEN_FILE 1004
+#define ERR_COMMAND_FAILED 1005
 
 int sendalert(char *, float, int, int, char *, char *);
