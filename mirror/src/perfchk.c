@@ -145,10 +145,12 @@ int sendalert (
                 fclose(fp);
                 goto loop;
             }
+#if 0 
             fseek(fp, 0L, SEEK_SET);
             for(i = 0; i < line_number - 1; i++) {
                 fgets(tmp, sizeof(tmp), fp);
-            }
+            } 
+#endif
             printf("%s\n",tmp);
         }
         fclose(fp);
@@ -168,17 +170,12 @@ int sendalert (
             }
         }
 
-        /* Find the value */
-        for(i = 0; i <= column; i++) {
-            if(column == i) {
-                value = atof(token);
-                break;
-            }
-            else{
-                token = strtok(NULL, "\"");
-            }
+        /* find the value from the 2nd column */
+        for(i = 1; i <= column; i++) {
+            token = strtok(NULL, "\"");
         }
- 
+        value = atof(token);
+
         /* Check value */
         if(threshold <= value) {
             counts++;
