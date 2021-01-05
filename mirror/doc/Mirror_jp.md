@@ -31,114 +31,97 @@
   # clpperfchk alert "MDC HB Time, Max2" 20 5 60 mail /opt/nec/clusterpro/perf/disk/nmp1.cur
   ```
 
-### クラスタの構成
-- CLUSTERPRO でミラーディスク型のクラスタを構築し、カスタムモニタリソースから clpperfchk コマンドを実行します。
+### CLUSTERPRO からの実行方法
+- CLUSTERPRO でミラーディスク型のクラスタを構築し、EXEC リソースから clpperfchk コマンドを実行します。
 - clpperfchk 内でしきい値を超えた場合、clplogcmd コマンドを用いて mail 送信などを行います。
   ```
    CLUSTERPRO
     |
-    +-- genw (Async mode)
+    +-- exec (Async mode)
          |
          +-- clpperfchk
               | 
               +-- clplogcmd
   ```
 
-## ソースコード案 (いずれ削除予定)
-```c
-// mdperf.h
-#define LABEL_LEN 128
-#define ROW_LEN 2048
-#define PATH_LEN 1024
-
-#deinfe ERR_INVALID_PARAM 1
-
-int sendalert(char *label, int threshold, int times, int interval, char *method, char *path);
-```
-```c
-// main.c
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "mdperf.h"
-
-int main
-(
-        int argc,
-        char **argv
-)
-{
-        /* define variables */
-        char label[LABEL_LEN];
-        char method[LABEL_LEN];
-        char path[PATH_LEN];
-        int times;
-        int interval;
-        long threshold;        
-
-        /* initialize variables */
-        /*
-         * Expamle:
-         * times = 0;
-         * threshold = 0;
-         */
-
-　　　  /* check option */
-        if (!strcmp(argv[1], "alert"))
-        {
-                sendalert(label, threshold, times, interval, method, path);
-        }
-        else
-        {
-                printf("%d: Invalid parameter.\n", __LINE__);
-                return ERR_INVALID_PARAM;
-        }
-
-    return 0;
-}
+### クラスタ構成例
+- サーバ
+  - サーバ名: sv1, sv2
+- フェイルオーバグループ
+  - failover
+    - 全てのサーバでフェイルオーバ可能
+      - リソース
+        - md (ミラーディスクリソース)
+        - その他業務に必要なリソース
+  - perfchk-sv1
+    - sv1 のみで起動可能
+      - リソース
+        - exec-perfchk-sv1 (EXEC リソース)
+  - perfchk-sv2
+    - sv2 のみで起動可能
+      - リソース
+        - exec-perfchk-sv2 (EXEC リソース)
+- モニタリソース
+  - pidw-perfchk-sv1
+  - pidw-perfchk-sv2
+<!--
+- サーバ
+  - sv1, sv2
+- フェイルオーバグループ
+  - failover: 業務用のグループ
+    - md
+  - perfchk-sv1
+    - 
+  - perfchk-sv2
+-->
 
 
-int
-sendalert
-(
-        char *label,
-        int threshold,
-        int times,
-        int interval,
-        char *method,
-        char *path
-)
-{
-        char *token = NULL;
-        char tmp[ROW_LEN];
-        int column;
-
-    /* snip */
-
-        /* find the column */
-        fp = fopen(path, "r");
-        fgets(tmp, sizeof(tmp), fp);
-        token = strtok(tmp, "\"")
-        i = 0;
-        /* Find the column */
-        while (token != NULL)
-        {
-                if (!strcmp(token, label))
-                {
-                    /* Bingo! */
-                    column = i;
-                    printf("column: %d\n", column);
-                    break;
-                }
-                token = strtok(NULL, "\"");
-                i++;
-        }
-        /* Find the last row */
-        while (1)
-        {
-            /* find the column on the last row */
-            sleep(interval);
-        }
-    return 0;
-}        
-```
+### 設定手順
+1. 以下のマニュアルを参考に、ミラーディスク型のクラスタを構築してください。
+1. clpperfchk をそれぞれのクラスタサーバの /opt/nec/clusterpro/bin に保存してください。
+1. Cluster WebUI を起動し、[設定モード] に切り替えてください。
+1. それぞれのサーバでのみ起動するフェイルオーバグループを作成してください。
+   - [起動サーバ] タブにて、[全てのサーバでフェイルオーバ可能] のチェックを外し、いずれかのサーバを追加してください。
+1. それぞれのフェイルオーバグループに EXEC リソースを追加し、以下を設定してください。
+   - [詳細] タブ
+     - [開始スクリプト] : 非同期
+     - Start Script
+       ```sh
+       #! /bin/sh
+       #***************************************
+       #*              start.sh               *
+       #***************************************
+       
+       #ulimit -s unlimited
+       
+       /opt/nec/clusterpro/bin/clpperfchk alert \
+       "Write, Total" \
+       10 \
+       1 \
+       60 \
+       syslog \
+       /opt/nec/clusterpro/perf/disk/nmp1.cur
+       
+       exit 0
+       ```
+     - Stop Script
+       ```sh
+       #! /bin/sh
+       #***************************************
+       #*               stop.sh               *
+       #***************************************
+       
+       #ulimit -s unlimited
+       
+       kill -9 `pgrep clpperfchk`
+       
+       exit 0
+       ```
+1. PID モニタリソースを2つ追加し、それぞれ以下のように設定してください。
+   - [監視 (共通) ] タブ
+     - 対象リソース: exec-perfchk-sv1 または exec-perfchk-sv2
+   - [回復動作] タブ
+     - カスタム設定
+     - 回復対象: exec-perfchk-sv1 または exec-perfchk-sv2
+     - 最大再活性回数: 任意の値
+     - 最大フェイルオーバ回数: 0
