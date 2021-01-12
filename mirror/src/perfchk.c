@@ -47,7 +47,7 @@ int main (
             
             /* Send alert */
             ret = sendalert(label, threshold, times, interval, method, path);
-            if(!ret) {
+            if(ret != 0) {
                 printf("%d: sendalert() failed (ret:%d).\n", __LINE__, ret);
                 return ret;
             }
