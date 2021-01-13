@@ -92,8 +92,6 @@
        #*              start.sh               *
        #***************************************
        
-       #ulimit -s unlimited
-       
        PERFCHKCMD="/opt/nec/clusterpro/bin/clpperfchk"
        LABEL="MDC HB Time, Cur"
        THRESHOLD="2"
@@ -111,8 +109,6 @@
        #***************************************
        #*               stop.sh               *
        #***************************************
-       
-       #ulimit -s unlimited
        
        kill -9 `ps ax |grep clpperfchk | grep nmp1 | awk '{print $1}'`
        
