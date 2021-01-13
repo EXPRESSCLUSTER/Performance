@@ -82,7 +82,7 @@
 1. Cluster WebUI を起動し、[設定モード] に切り替えてください。
 1. それぞれのサーバでのみ起動するフェイルオーバグループを作成してください。
    - [起動サーバ] タブにて、[全てのサーバでフェイルオーバ可能] のチェックを外し、いずれかのサーバを追加してください。
-1. それぞれのフェイルオーバグループに EXEC リソースを追加し、以下を設定してください。
+1. それぞれのサーバに対する EXEC リソースを追加し、以下を設定してください。
    - [詳細] タブ
      - [開始スクリプト] : 非同期
      - Start Script
@@ -94,14 +94,15 @@
        
        #ulimit -s unlimited
        
-       /opt/nec/clusterpro/bin/clpperfchk alert \
-       "Write, Total" \
-       10 \
-       1 \
-       60 \
-       syslog \
-       /opt/nec/clusterpro/perf/disk/nmp1.cur
-       
+       PERFCHKCMD="/opt/nec/clusterpro/bin/clpperfchk"
+       LABEL="MDC HB Time, Cur"
+       THRESHOLD="2"
+       TIMES="5"
+       INTERVAL="60"
+       METHOD="syslog"
+       CHKPATH="/opt/nec/clusterpro/perf/disk/nmp1.cur"
+
+       $PERFCHKCMD alert "$LABEL" $THRESHOLD $TIMES $INTERVAL $METHOD $CHKPATH
        exit 0
        ```
      - Stop Script
@@ -113,7 +114,7 @@
        
        #ulimit -s unlimited
        
-       kill -9 `pgrep clpperfchk`
+       kill -9 `ps ax |grep clpperfchk | grep nmp1 | awk '{print $1}'`
        
        exit 0
        ```
