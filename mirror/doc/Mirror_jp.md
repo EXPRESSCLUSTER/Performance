@@ -1,4 +1,4 @@
-# ミラー統計情報
+# ミラー統計情報に応じてALert報告を行うコマンド clpperfchk
 - CLUSTERPRO のミラー統計情報を確認し、アラートの送信などを行う clpperfchk コマンドを提供します。
   - 現時点では、Linux 版のみに対応しています。
 
@@ -26,9 +26,9 @@
       - {*} にはミラーディスクの番号が入ります。
 
 ### コマンド実行例
-- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Max2) が 20秒 を連続して 5回 超えたら mail を送信する
+- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Cur) が 2秒 を連続して 5回 超えたら syslog に記述する
   ```sh
-  # clpperfchk alert "MDC HB Time, Max2" 20 5 60 mail /opt/nec/clusterpro/perf/disk/nmp1.cur
+  # clpperfchk alert "MDC HB Time, Cur" 2 5 60 syslog /opt/nec/clusterpro/perf/disk/nmp1.cur
   ```
 
 ### CLUSTERPRO からの実行方法
@@ -78,14 +78,15 @@
 
 ### 設定手順
 1. 以下のマニュアルを参考に、ミラーディスク型のクラスタを構築してください。
-   - https://www.manuals.nec.co.jp/contents/system/files/nec_manuals/node/497/index.html
+   - https://www.manuals.nec.co.jp/contents/system/files/nec_manuals/node/497/L42_IG_JP/index.html
 1. clpperfchk をそれぞれのクラスタサーバの /opt/nec/clusterpro/bin に保存してください。
 1. Cluster WebUI を起動し、[設定モード] に切り替えてください。
 1. それぞれのサーバでのみ起動するフェイルオーバグループを作成してください。
    - [起動サーバ] タブにて、[全てのサーバでフェイルオーバ可能] のチェックを外し、いずれかのサーバを追加してください。
-1. それぞれのサーバに対する EXEC リソースを追加し、以下を設定してください。
+1. 手順4で加えたフェイルオーバーグループに EXEC リソースを追加し、以下を設定してください。
    - [詳細] タブ
-     - [開始スクリプト] : 非同期
+     - [調整]ボタン [開始スクリプト] : 非同期
+   - Start Script
        ```sh
        #! /bin/sh
        #***************************************
@@ -103,8 +104,9 @@
        $PERFCHKCMD alert "$LABEL" $THRESHOLD $TIMES $INTERVAL $METHOD $CHKPATH
        exit 0
        ```
-
-     - [停止スクリプト] : 同期
+   - [詳細] タブ
+     - [調整]ボタン [停止スクリプト] : 同期
+   - Stop Script   
        ```sh
        #! /bin/sh
        #***************************************
