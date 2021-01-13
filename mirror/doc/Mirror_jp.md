@@ -78,6 +78,7 @@
 
 ### 設定手順
 1. 以下のマニュアルを参考に、ミラーディスク型のクラスタを構築してください。
+   - https://www.manuals.nec.co.jp/contents/system/files/nec_manuals/node/497/index.html
 1. clpperfchk をそれぞれのクラスタサーバの /opt/nec/clusterpro/bin に保存してください。
 1. Cluster WebUI を起動し、[設定モード] に切り替えてください。
 1. それぞれのサーバでのみ起動するフェイルオーバグループを作成してください。
@@ -85,7 +86,6 @@
 1. それぞれのサーバに対する EXEC リソースを追加し、以下を設定してください。
    - [詳細] タブ
      - [開始スクリプト] : 非同期
-     - Start Script
        ```sh
        #! /bin/sh
        #***************************************
@@ -103,7 +103,8 @@
        $PERFCHKCMD alert "$LABEL" $THRESHOLD $TIMES $INTERVAL $METHOD $CHKPATH
        exit 0
        ```
-     - Stop Script
+
+     - [停止スクリプト] : 同期
        ```sh
        #! /bin/sh
        #***************************************
