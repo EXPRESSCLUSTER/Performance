@@ -1,8 +1,8 @@
-# ミラー統計情報に応じてALert報告を行うコマンド clpperfchk
+# [clpperfchk]コマンド--ミラー統計情報に応じてAlert報告を行う
 - CLUSTERPRO のミラー統計情報を確認し、アラートの送信などを行う clpperfchk コマンドを提供します。
   - 現時点では、Linux 版のみに対応しています。
 
-## アラートの送信
+## コマンド引数
 ```sh
 # clpperfchk alert [label] [threshold] [times] [interval] [method] [path]
 ```
@@ -26,7 +26,7 @@
       - {*} にはミラーディスクの番号が入ります。
 
 ### コマンド実行例
-- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Cur) が 2秒 を連続して 5回 超えたら syslog に記述する
+- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Cur) が 2秒 を連続して 5回 超えたら syslogに記述します。
   ```sh
   # clpperfchk alert "MDC HB Time, Cur" 2 5 60 syslog /opt/nec/clusterpro/perf/disk/nmp1.cur
   ```
@@ -125,3 +125,9 @@
      - 回復対象: exec-perfchk-sv1 または exec-perfchk-sv2
      - 最大再活性回数: 任意の値
      - 最大フェイルオーバ回数: 0
+
+
+### 動作確認
+1. スクリプトを利用してミラーディスクリソースに 60 秒ごとにファイルの作成、削除を行う。
+1. 第6引数を syslog に指定してclpperfchkコマンドを実行する。
+1. alertが送信されたら、/var/log/messergeで確認する。
