@@ -1,8 +1,9 @@
 # [clpperfchk]コマンド--ミラー統計情報に応じてAlert報告を行う
+- 本ページでは、CLUSTERPROのアラートを行うclpperfchk コマンドについて、コマンド引数から実行例、CLUSTERPRO からの実行方法、動作確認までを分かりやすく紹介していきます。
 - CLUSTERPRO のミラー統計情報を確認し、アラートの送信などを行う clpperfchk コマンドを提供します。
   - 現時点では、Linux 版のみに対応しています。
 
-## コマンド引数
+### clpperfchk のコマンド引数
 ```sh
 # clpperfchk alert [label] [threshold] [times] [interval] [method] [path]
 ```
