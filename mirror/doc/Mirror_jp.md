@@ -1,6 +1,6 @@
 # ミラー統計情報チェックツール
 - CLUSTERPRO のミラー統計情報を確認し、アラートの送信などを行う clpperfchk コマンドを提供します。
-  - コマンド引数から実行例、CLUSTERPRO からの実行方法、動作確認までを分かりやすく紹介していきます。
+  - コマンド引数、実行例、動作確認を分かりやすく紹介していきます。
   - 現時点では、Linux 版のみに対応しています。
 
 ### clpperfchk のコマンド引数
@@ -27,23 +27,11 @@
       - {*} にはミラーディスクの番号が入ります。
 
 ### コマンド実行例
-- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Cur) が 2秒 を連続して 5回 超えたら syslogに記述します。
+- ミラーディスクコネクトのハートビート時間 (MDC HB Time, Max2) が 2秒 を連続して 5回 超えたら syslogに記述します。
   ```sh
-  # clpperfchk alert "MDC HB Time, Cur" 2 5 60 syslog /opt/nec/clusterpro/perf/disk/nmp1.cur
+  # clpperfchk alert "MDC HB Time, Max2" 2 5 60 syslog /opt/nec/clusterpro/perf/disk/nmp1.cur
   ```
 
-### CLUSTERPRO からの実行方法
-- CLUSTERPRO でミラーディスク型のクラスタを構築し、EXEC リソースから clpperfchk コマンドを実行します。
-- clpperfchk コマンド内でしきい値を超えた場合、clplogcmd コマンドを用いて mail 送信などを行います。
-  ```
-   CLUSTERPRO
-    |
-    +-- exec (Async mode)
-         |
-         +-- clpperfchk
-              | 
-              +-- clplogcmd
-  ```
 
 ### クラスタ構成例
 - サーバ
@@ -65,16 +53,6 @@
 - モニタリソース
   - pidw-perfchk-sv1
   - pidw-perfchk-sv2
-<!--
-- サーバ
-  - sv1, sv2
-- フェイルオーバグループ
-  - failover: 業務用のグループ
-    - md
-  - perfchk-sv1
-    - 
-  - perfchk-sv2
--->
 
 
 ### 設定手順
@@ -96,7 +74,7 @@
        #***************************************
        
        PERFCHKCMD="/opt/nec/clusterpro/bin/clpperfchk"
-       LABEL="MDC HB Time, Cur"
+       LABEL="MDC HB Time, Max2"
        THRESHOLD="2"
        TIMES="5"
        INTERVAL="60"
@@ -131,6 +109,19 @@
 
 
 ### 動作確認
-1. スクリプトを利用してミラーディスクリソースに 60 秒ごとにファイルの作成、削除を行う。
-1. 第6引数を syslog に指定してclpperfchkコマンドを実行する。
-1. alertが送信されたら、/var/log/messergeで確認する。
+上記サンプルスクリプトを使用した場合の動作確認方法について記載します。
+ 
+1. クラスタを起動し、正常に起動することを確認します。
+1. フェイルオーバグループが起動したサーバで、以下のコマンドを実行し、clpperfchkコマンドが起動していることを確認します。
+     ```
+     ps ax | grep clpperfchk
+     ```
+1. killコマンドを用いて、clpperfchkコマンドのプロセスを強制終了させます。CLUSTERPROのプロセスIDモニタリソースによって、clpperfchkコマンドが再活性されることを確認します。
+ 
+1. tcコマンドを使用してclpperfchkコマンドに設定したしきい値を超えるように、ネットワークを遅延させます。
+     ```
+     tc qdisc add dev eth0 root netem delay 3000ms
+     ```
+     しきい値を規定回数超えた場合、syslogに以下のメッセージが出力されることを確認します。
+     ```
+     Over threshold (label:MDC HB Time, Max2, threshold:2.000000, times:5)."
