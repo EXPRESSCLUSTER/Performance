@@ -174,6 +174,10 @@ int sendalert (
         for(i = 1; i <= column; i++) {
             token = strtok(NULL, "\"");
         }
+        if(token == NULL) {
+            printf("%d: Invalid format.\n", __LINE__);
+            return ERR_INVALID_FORMAT;
+        }
         value = atof(token);
 
         /* Check value */
