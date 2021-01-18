@@ -99,16 +99,18 @@
        exit 0
        ```
 1. PID モニタリソースを2つ追加し、それぞれ以下のように設定してください。
-   - １. sv1
-    - [監視 (共通) ] タブ
-      - 対象リソース: exec-perfchk-sv1
-    - [回復動作] タブ
-      - カスタム設定
-      - 回復対象: exec-perfchk-sv1
-      - 最大再活性回数: 任意の値
-      - 最大フェイルオーバ回数: 0
+   - [情報] タブ 
+      - perfchk-sv1
+   - [監視 (共通) ] タブ
+     - 対象リソース: exec-perfchk-sv1
+   - [回復動作] タブ
+     - カスタム設定
+     - 回復対象: exec-perfchk-sv1
+     - 最大再活性回数: 任意の値
+     - 最大フェイルオーバ回数: 0
 
-   - ２. sv2
+    - [情報] タブ
+      - perfchk-sv2
     - [監視 (共通) ] タブ
       - 対象リソース: exec-perfchk-sv2
     - [回復動作] タブ
@@ -127,7 +129,7 @@
      ```
 1. killコマンドを用いて、clpperfchkコマンドのプロセスを強制終了させます。CLUSTERPROのPIDモニタリソースによって、clpperfchkコマンドが再活性されるたことを示す、以下のメッセージを確認します。
      ```
-     Recovery target exec-perfchk-sv1 has restarted because an error was detected in monitoring pidw-nmp1.
+     Recovery target exec-perfchk-sv1 has restarted because an error was detected in monitoring pidw-perfchk-sv1.
      ```
  
 1. tcコマンドを使用してclpperfchkコマンドに設定したしきい値を超えるように、ネットワークを遅延させます。
