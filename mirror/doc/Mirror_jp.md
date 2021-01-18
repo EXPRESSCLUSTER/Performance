@@ -39,16 +39,16 @@
 - フェイルオーバグループ
   - failover
     - 全てのサーバでフェイルオーバ可能
-      - リソース
-        - md (ミラーディスクリソース)
+      - グループリソース
+        - ミラーディスクリソース
         - その他業務に必要なリソース
   - perfchk-sv1
     - sv1 のみで起動可能
-      - リソース
+      - グループリソース
         - exec-perfchk-sv1 (EXEC リソース)
   - perfchk-sv2
     - sv2 のみで起動可能
-      - リソース
+      - グループリソース
         - exec-perfchk-sv2 (EXEC リソース)
 - モニタリソース
   - pidw-perfchk-sv1
@@ -99,14 +99,23 @@
        exit 0
        ```
 1. PID モニタリソースを2つ追加し、それぞれ以下のように設定してください。
-   - [監視 (共通) ] タブ
-     - 対象リソース: exec-perfchk-sv1 または exec-perfchk-sv2
-   - [回復動作] タブ
-     - カスタム設定
-     - 回復対象: exec-perfchk-sv1 または exec-perfchk-sv2
-     - 最大再活性回数: 任意の値
-     - 最大フェイルオーバ回数: 0
+   - １. sv1
+    - [監視 (共通) ] タブ
+      - 対象リソース: exec-perfchk-sv1
+    - [回復動作] タブ
+      - カスタム設定
+      - 回復対象: exec-perfchk-sv1
+      - 最大再活性回数: 任意の値
+      - 最大フェイルオーバ回数: 0
 
+   - ２. sv2
+    - [監視 (共通) ] タブ
+      - 対象リソース: exec-perfchk-sv2
+    - [回復動作] タブ
+      - カスタム設定
+      - 回復対象: exec-perfchk-sv2
+      - 最大再活性回数: 任意の値
+      - 最大フェイルオーバ回数: 0
 
 ### 動作確認
 上記サンプルスクリプトを使用した場合の動作確認方法について記載します。
@@ -116,7 +125,10 @@
      ```
      ps ax | grep clpperfchk
      ```
-1. killコマンドを用いて、clpperfchkコマンドのプロセスを強制終了させます。CLUSTERPROのプロセスIDモニタリソースによって、clpperfchkコマンドが再活性されることを確認します。
+1. killコマンドを用いて、clpperfchkコマンドのプロセスを強制終了させます。CLUSTERPROのPIDモニタリソースによって、clpperfchkコマンドが再活性されるたことを示す、以下のメッセージを確認します。
+     ```
+     Recovery target exec-perfchk-sv1 has restarted because an error was detected in monitoring pidw-nmp1.
+     ```
  
 1. tcコマンドを使用してclpperfchkコマンドに設定したしきい値を超えるように、ネットワークを遅延させます。
      ```
