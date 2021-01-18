@@ -26,7 +26,7 @@ int main (
     memset(path, '\0', sizeof(path));
 
     /* Check arguments */
-a    if((argc == NUMBER_OF_ARGUMENTS)){
+    if((argc == NUMBER_OF_ARGUMENTS)){
         if(!strcmp(argv[1], STR_ALERT)){
             strncpy(label, argv[2], LABEL_LEN);
             threshold = atof(argv[3]);
